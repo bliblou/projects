@@ -25,11 +25,12 @@ int main (int argc, char **argv) {
 	struct sigaction action;
 
 	struct sockaddr_in adresse[10];
+	struct sockaddr_in best;
 	int nb = 0; 
 
 	int offre;
 	int prix = 10;
-	int offreCourante = 0;
+	int offreCourante = prix;
 	int conf;
 
 	/* cr'eation de la socket */
@@ -146,7 +147,9 @@ int main (int argc, char **argv) {
 
 	continuer = 0;
 	
-	while(continuer == 0) {
+	while (continuer == 0) {
+
+		printf("Attente offre...\n");
 
 		if ((recu = recvfrom(sockVente, &offre, sizeof(int), 0, (struct sockaddr *) &adresseEmetteur, &lgadresseEmetteur)) == -1) {
 			perror("recvfrom");
@@ -157,8 +160,9 @@ int main (int argc, char **argv) {
 
 		printf("Offre reçue: %d\n", offre);
 
-		if (offre < offreCourante) {
+		if (offre > offreCourante) {
 			offreCourante = offre;
+			//best = adresseEmetteur;
 		}
 
 		printf("Continuer la vente?[y/n]\n");
@@ -170,8 +174,6 @@ int main (int argc, char **argv) {
 			printf("Fin de la vente...\n");
 
 			for (int i = 0; i < nb; ++i) {
-
-				printf("BOUME\n");
 
 				if ((envoye = sendto(sockAccueil, &offreCourante, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
 					perror("sendto");
@@ -192,6 +194,31 @@ int main (int argc, char **argv) {
 			printf("buffer vide et offre courante envoyes\n");
 
 			continuer = 1;
+
+		} else if (strcmp(reponse, "y") == 0) {
+
+			strcpy(buf, "continuer");
+
+			for (int i = 0; i < nb; ++i) {
+
+				if ((envoye = sendto(sockAccueil, &offreCourante, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
+					perror("sendto");
+					close(sockVente);
+					close(sockAccueil);
+					exit(1);
+				}
+
+				if ((envoye = sendto(sockAccueil, buf, sizeof(buf), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(buf)) {
+					perror("sendto");
+					close(sockVente);
+					close(sockAccueil);
+					exit(1);
+				}
+				
+			}
+
+			printf("Offre courante envoyee\n");
+
 		}
 
 	}

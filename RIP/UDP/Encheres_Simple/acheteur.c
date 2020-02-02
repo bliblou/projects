@@ -90,44 +90,52 @@ int main(int argc, char *argv[]) {
 	}
 	printf("Prix: %d\n", prix);
 
-	printf("Saisissez offre:\n");
-	scanf("%d", &offre);
+	int continuer = 0;
 
-	if(offre > 0) {
-		//envoi offre
-		if ((envoye = sendto(sock, &offre, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, lgadresseReceveur)) != sizeof(int)) {
-			perror("sendto");
+	while (continuer == 0) {
+
+		printf("Saisissez offre:\n");
+		scanf("%d", &offre);
+
+		if (offre > 0) {
+			//envoi offre
+			if ((envoye = sendto(sock, &offre, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, lgadresseReceveur)) != sizeof(int)) {
+				perror("sendto");
+				close(sock);
+				exit(1);
+			}
+			printf("Offre envoyée\n");
+
+		} else {
+			
+			continuer = 1;
+			exit(1);
+		}
+
+		//reception offre courante
+		if ((recu = recvfrom(sock, &prix, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) != sizeof(int)) {
+			perror("recvfrom offreCourante"); 
 			close(sock);
 			exit(1);
 		}
-		printf("Offre envoyée\n");
+		printf("Offre courante = %d euros\n", prix);
 
-	} else {
-		//lol
-	}
+		//reception datagramme vide
+		strcpy(buf, "");
+		if ((recu = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) != sizeof(buf)) {
+			perror("recvfrom buf"); 
+			close(sock);
+			exit(1);
+		}
+		if (buf == "") {
 
-	//reception offre courante
-	if ((recu = recvfrom(sock, &prix, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) != sizeof(int)) {
-		perror("recvfrom offreCourante"); 
-		close(sock);
-		exit(1);
-	}
-	printf("Offre courante = %d euros\n", prix);
+			printf("Adjuge vendu!\n");
+			continuer = 1;
 
-	//reception datagramme vide
-	strcpy(buf, "");
-	if ((recu = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) != sizeof(buf)) {
-		perror("recvfrom buf"); 
-		close(sock);
-		exit(1);
-	}
-	if(buf == "") {
+		} else {
 
-		printf("Adjuge vendu!\n");
-
-	} else {
-
-		//lol
+			printf("Suite de la vente...\n");
+		}
 	}
 
 	close(sock);
