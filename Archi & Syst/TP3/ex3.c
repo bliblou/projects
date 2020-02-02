@@ -1,8 +1,12 @@
-#include <pthread.h>           /* produit.c */
+#define _GNU_SOURCE
+#include <sched.h>
+#include <pthread.h>
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
+#include <limits.h>
 
 /*********** Data Type ***********/
 
@@ -79,7 +83,16 @@ void * mult(void * data) {
   /*=>Recuperation de l'index, c'est a dire index = ... */
   index = (size_t)data;
 
-  fprintf(stderr,"Begin mult(%ld)\n",index);
+  cpu_set_t s;
+  int coeur = index%12;
+  CPU_SET(coeur, &s);
+
+  if (sched_setaffinity(0, sizeof(cpu_set_t), &s) != 0) {
+    perror("setaffinity");
+    exit (1);
+  }
+
+  fprintf(stderr,"Begin mult(%ld) sur coeur(%d)\n",index,sched_getcpu());
                                                /* Tant que toutes les iterations */
   for(iter=0;iter<prod.nbIterations;iter++) {  /* n'ont pas eu lieu              */
 
@@ -178,8 +191,8 @@ int main(int argc,char ** argv) {
   pthread_t  addTh;
   void      *threadReturnValue;
 
-  /* A cause de warnings lorsque le code n'est pas encore la...*/
-  (void)addTh; (void)threadReturnValue;
+  long nbCoeur = sysconf(_SC_NPROCESSORS_ONLN);
+  printf("Nombre de coeurs = %ld\n", nbCoeur);
 
   /* Lire le nombre d'iterations et la taille des vecteurs */
   if((argc<=2)||

@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 	  }
 
 	/* recherche de l'@ IP de la machine distante */
-	if ((hote = gethostbyname(argv[2])) == NULL) {
+	if ((hote = gethostbyname(argv[3])) == NULL) {
 	  	perror("gethostbyname"); 
 	  	close(sock); 
 	  	exit(2);
@@ -49,9 +49,8 @@ int main(int argc, char *argv[]) {
 		perror("gethostname");
 		exit(1);
 	}
-
-	strcpy(buf, nomh);
-	if ((envoye = sendto(sock, buf, sizeof(buf), 0, (struct sockaddr *) &adresseReceveur, lgadresseReceveur)) != sizeof(buf)) {
+	//envoi nom de la machine
+	if ((envoye = sendto(sock, nomh, sizeof(nomh), 0, (struct sockaddr *) &adresseReceveur, lgadresseReceveur)) != sizeof(nomh)) {
 		perror("sendto");
 		close(sock);
 		exit(1);
@@ -59,13 +58,20 @@ int main(int argc, char *argv[]) {
 	printf("Demande de participation en cours...\n");
 
 	//attente confirmation
-	strcpy(buf, "");
-	if ((recu = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) != sizeof(buf)) {
+	int conf = -1;
+	if ((recu = recvfrom(sock, &conf, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) != sizeof(int)) {
 		perror("recvfrom confirmation"); 
 		close(sock);
 		exit(1);
 	}
-	printf("Participation confirmee\n");
+	if (conf ==1) {
+		printf("Participation confirmee\n");
+	} else {
+		printf("Participation refusee\n");
+		exit (1);
+	}
+	
+	adresseReceveur.sin_port = htons(atoi(argv[2]));
 
 	//attente description
 	strcpy(buf, "");
@@ -84,11 +90,10 @@ int main(int argc, char *argv[]) {
 	}
 	printf("Prix: %d\n", prix);
 
-	printf("Saisissez offre:");
+	printf("Saisissez offre:\n");
 	scanf("%d", &offre);
 
 	if(offre > 0) {
-
 		//envoi offre
 		if ((envoye = sendto(sock, &offre, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, lgadresseReceveur)) != sizeof(int)) {
 			perror("sendto");
@@ -118,7 +123,7 @@ int main(int argc, char *argv[]) {
 	}
 	if(buf == "") {
 
-		printf("Adjuge vendu!");
+		printf("Adjuge vendu!\n");
 
 	} else {
 
