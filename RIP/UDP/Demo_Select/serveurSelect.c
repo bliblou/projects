@@ -8,6 +8,8 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <string.h>
+
 #define TRUE 1
 #define BUFSIZE 512
 #define NB_CLIENTS_MAX 10
@@ -68,7 +70,8 @@ int main ( int argc, char **argv) {
 
 		/* construction de l'ens a surveiller */
 		FD_ZERO(&fdset);
-		/* calcul du maximum  et construction du FD_SET */max = 0;
+		/* calcul du maximum  et construction du FD_SET */
+		max = 0;
 		for (i=0;i<nbclients;i++) {
 
 			FD_SET(clients[i], &fdset);

@@ -89,8 +89,12 @@ int main(int argc, char *argv[]) {
 	printf("Prix: %d\n", prix);
 
 	int continuer = 0;
+	int lect;
 
 	while (continuer == 0) {
+
+		FD_ZERO(&lect);
+		FD_SET();
 
 		printf("Saisissez offre:\n");
 		scanf("%d", &offre);

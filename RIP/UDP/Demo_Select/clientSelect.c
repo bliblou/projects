@@ -43,7 +43,7 @@ int main(int argc, char const *argv[]) {
 	bcopy(hote->h_addr, &adresse_serveur.sin_addr.s_addr, hote->h_length);
 
 	/* demande de connexion au serveur */
-	if (connect(sock, &adresse_serveur, sizeof(adresse_serveur))==-1){
+	if (connect(sock, (struct sockaddr *) &adresse_serveur, sizeof(adresse_serveur))==-1){
 		perror("connect");
 		exit(2);
 	}
@@ -53,25 +53,25 @@ int main(int argc, char const *argv[]) {
 	continuer = 1;
 	while(continuer) {
 
-	/* requete au serveur */
-	strcpy(buf, "un Big Mac");
-	if (write(sock,buf,strlen(buf)+1) == -1) {
-		perror("write");
-		exit(1);
-	}
-	printf("j'ai commande un Big Mac\n");
-	fflush(stdout);
+		/* requete au serveur */
+		strcpy(buf, "un Big Mac");
+		if (write(sock,buf,strlen(buf)+1) == -1) {
+			perror("write");
+			exit(1);
+		}
+		printf("j'ai commande un Big Mac\n");
+		fflush(stdout);
 
-	/* attente de la reponse */
-	if (read(sock,buf,BUFSIZE) == -1) {
-		perror("read");
-		exit(1);
-	}
-	printf("j'ai recu un %s\n", buf);
-	fflush(stdout);
+		/* attente de la reponse */
+		if (read(sock,buf,BUFSIZE) == -1) {
+			perror("read");
+			exit(1);
+		}
+		printf("j'ai recu un %s\n", buf);
+		fflush(stdout);
 
-	printf("Voulez-vous continuer, oui (1), non (0)\n");
-	scanf("%d", &continuer);
+		printf("Voulez-vous continuer, oui (1), non (0)\n");
+		scanf("%d", &continuer);
 	}
 	
 	/* fermeture de la socket */

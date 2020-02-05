@@ -32,6 +32,7 @@ int main (int argc, char **argv) {
 	int prix = 10;
 	int offreCourante = prix;
 	int conf;
+	int rien;
 
 	/* cr'eation de la socket */
 	if ((sockAccueil = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
@@ -127,7 +128,7 @@ int main (int argc, char **argv) {
 		
 		strcpy(buf, "");
 		strcpy(buf, "Description objet blah blah");
-		lgadresseEmetteur = sizeof(adresseEmetteur);
+		lgadresseEmetteur = sizeof(adresse[i]);
 		if ((envoye = sendto(sockVente, buf, sizeof(buf), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(buf)) {
 			perror("sendto");
 			close(sockVente);
@@ -136,7 +137,7 @@ int main (int argc, char **argv) {
 
 		printf("Description envoyee\n");
 
-		lgadresseEmetteur = sizeof(adresseEmetteur);
+		lgadresseEmetteur = sizeof(adresse[i]);
 		if ((envoye = sendto(sockVente, &prix, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
 			perror("sendto");
 			close(sockVente);
@@ -172,8 +173,6 @@ int main (int argc, char **argv) {
 
 		printf("Meilleure offre = %d euros. Continuer la vente?[y/n]\n", offreCourante);
 		scanf("%s", reponse);
-
-		int rien;
 
 		if(strcmp(reponse, "n") == 0) {
 
