@@ -4,9 +4,19 @@
 
 void main() {
 
+	int c = sched_getcpu();
+	printf("Coeur %d\n",c);
+
+	int x;
+
 	while(1) {
 
-		printf("Coeur %d\n",sched_getcpu());
+		x = sched_getcpu();
+
+		if(x != c) {
+			printf("Coeur %d\n",c);
+			c = x;
+		}
 	}
 
 }
