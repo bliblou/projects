@@ -69,14 +69,13 @@ int main (int argc, char **argv) {
 	  	exit(1);
 	}
 
-	lgadresseEmetteur = sizeof(adresseEmetteur);
-
-	int continuer = 0;
 	strcpy(reponse, "");
 
-	while(continuer == 0) {
+	//BOUCLE D'ACCUEIL------------------------------------------------------------------------------------------------------------------------------------
+	while(nb < 3) {
 
-		if ((recu = recvfrom(sockAccueil, buf, sizeof(buf), 0, (struct sockaddr *) &adresseEmetteur, &lgadresseEmetteur)) != sizeof(buf)) {
+		lgadresseEmetteur = sizeof(adresseEmetteur);
+		if ((recu = recvfrom(sockAccueil, buf, sizeof(buf), 0, (struct sockaddr *) &adresseEmetteur, &lgadresseEmetteur)) == -1) {
 			perror("recvfrom buf"); 
 			close(sockVente);
 			close(sockAccueil);
@@ -93,9 +92,8 @@ int main (int argc, char **argv) {
 			adresse[nb] = adresseEmetteur;
 			nb++;
 
-			lgadresseEmetteur = sizeof(adresse[nb]);
-
 			conf = 1;
+			lgadresseEmetteur = sizeof(adresseEmetteur);
 			if ((envoye = sendto(sockAccueil, &conf, sizeof(int), 0, (struct sockaddr *) &adresseEmetteur, lgadresseEmetteur)) != sizeof(int)) {
 				perror("sendto");
 				close(sockVente);
@@ -105,11 +103,10 @@ int main (int argc, char **argv) {
 
 			printf("Confirmation envoyee.\n");
 
-			continuer = 1;
-
-		} else {
+		} else if (strcmp(reponse, "n") == 0) {
 
 			conf = 0;
+			lgadresseEmetteur = sizeof(adresseEmetteur);
 			if ((envoye = sendto(sockAccueil, &conf, sizeof(int), 0, (struct sockaddr *) &adresseEmetteur, lgadresseEmetteur)) != sizeof(int)) {
 				perror("sendto");
 				close(sockVente);
@@ -120,72 +117,81 @@ int main (int argc, char **argv) {
 			printf("Connexion refusee.\n");
 		}
 	}
+	
+	close(sockAccueil);
 
-	for (int i = 0; i < nb; ++i) {
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	// BOUCLE D'AVANT VENTE -------------------------------------------------------------------------------------------------------------------------
+	for (int i = 0; i < nb; i++) {
 		
 		strcpy(buf, "");
 		strcpy(buf, "Description objet blah blah");
+		lgadresseEmetteur = sizeof(adresseEmetteur);
 		if ((envoye = sendto(sockVente, buf, sizeof(buf), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(buf)) {
 			perror("sendto");
 			close(sockVente);
-			close(sockAccueil);
 			exit(1);
 		}
 
 		printf("Description envoyee\n");
 
+		lgadresseEmetteur = sizeof(adresseEmetteur);
 		if ((envoye = sendto(sockVente, &prix, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
 			perror("sendto");
 			close(sockVente);
-			close(sockAccueil);
 			exit(1);
 		}
 
 		printf("Prix envoye\n");
 
 	}
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	continuer = 0;
-	
+	// BOUCLE DE VENTE --------------------------------------------------------------------------------------------------------------------------------
+	int continuer = 0;
 	while (continuer == 0) {
 
 		printf("Attente offre...\n");
 
-		if ((recu = recvfrom(sockVente, &offre, sizeof(int), 0, (struct sockaddr *) &adresseEmetteur, &lgadresseEmetteur)) == -1) {
-			perror("recvfrom");
-			close(sockVente);
-			close(sockAccueil);
-			exit(1);
+		for (int i = 0; i<nb; i++) {
+
+			lgadresseEmetteur = sizeof(adresseEmetteur);
+			if ((recu = recvfrom(sockVente, &offre, sizeof(int), 0, (struct sockaddr *) &adresseEmetteur, &lgadresseEmetteur)) == -1) {
+				perror("recvfrom");
+				close(sockVente);
+				exit(1);
+			}
+
+			printf("Offre reçue: %d\n", offre);
+
+			if (offre > offreCourante) {
+				offreCourante = offre;
+			}
 		}
 
-		printf("Offre reçue: %d\n", offre);
-
-		if (offre > offreCourante) {
-			offreCourante = offre;
-			//best = adresseEmetteur;
-		}
-
-		printf("Continuer la vente?[y/n]\n");
+		printf("Meilleure offre = %d euros. Continuer la vente?[y/n]\n", offreCourante);
 		scanf("%s", reponse);
+
+		int rien;
 
 		if(strcmp(reponse, "n") == 0) {
 
-			strcpy(buf, "");
 			printf("Fin de la vente...\n");
 
 			for (int i = 0; i < nb; ++i) {
 
-				if ((envoye = sendto(sockAccueil, &offreCourante, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
+				lgadresseEmetteur = sizeof(adresseEmetteur);
+				if ((envoye = sendto(sockVente, &offreCourante, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
 					perror("sendto");
 					close(sockVente);
-					close(sockAccueil);
 					exit(1);
 				}
 
-				if ((envoye = sendto(sockAccueil, buf, sizeof(buf), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(buf)) {
+				lgadresseEmetteur = sizeof(adresseEmetteur);
+				if ((envoye = sendto(sockVente, &rien, 0, 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != 0) {
 					perror("sendto");
 					close(sockVente);
-					close(sockAccueil);
 					exit(1);
 				}
 				
@@ -197,21 +203,19 @@ int main (int argc, char **argv) {
 
 		} else if (strcmp(reponse, "y") == 0) {
 
-			strcpy(buf, "continuer");
-
 			for (int i = 0; i < nb; ++i) {
 
-				if ((envoye = sendto(sockAccueil, &offreCourante, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
+				lgadresseEmetteur = sizeof(adresseEmetteur);
+				if ((envoye = sendto(sockVente, &offreCourante, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
 					perror("sendto");
 					close(sockVente);
-					close(sockAccueil);
 					exit(1);
 				}
 
-				if ((envoye = sendto(sockAccueil, buf, sizeof(buf), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(buf)) {
+				lgadresseEmetteur = sizeof(adresseEmetteur);
+				if ((envoye = sendto(sockVente, &rien, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
 					perror("sendto");
 					close(sockVente);
-					close(sockAccueil);
 					exit(1);
 				}
 				
@@ -222,9 +226,9 @@ int main (int argc, char **argv) {
 		}
 
 	}
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	close(sockVente);
-	close(sockAccueil);
 
 	return 1;
 

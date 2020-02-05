@@ -59,12 +59,12 @@ int main(int argc, char *argv[]) {
 
 	//attente confirmation
 	int conf = -1;
-	if ((recu = recvfrom(sock, &conf, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) != sizeof(int)) {
+	if ((recu = recvfrom(sock, &conf, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1) {
 		perror("recvfrom confirmation"); 
 		close(sock);
 		exit(1);
 	}
-	if (conf ==1) {
+	if (conf == 1) {
 		printf("Participation confirmee\n");
 	} else {
 		printf("Participation refusee\n");
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 
 	//attente description
 	strcpy(buf, "");
-	if ((recu = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) != sizeof(buf)) {
+	if ((recu = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1) {
 		perror("recvfrom buf"); 
 		close(sock);
 		exit(1);
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 	printf("Description de l'objet: %s\n", buf);
 
 	//attente prix
-	if ((recu = recvfrom(sock, &prix, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) != sizeof(int)) {
+	if ((recu = recvfrom(sock, &prix, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1) {
 		perror("recvfrom prix"); 
 		close(sock);
 		exit(1);
@@ -97,23 +97,15 @@ int main(int argc, char *argv[]) {
 		printf("Saisissez offre:\n");
 		scanf("%d", &offre);
 
-		if (offre > 0) {
-			//envoi offre
-			if ((envoye = sendto(sock, &offre, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, lgadresseReceveur)) != sizeof(int)) {
-				perror("sendto");
-				close(sock);
-				exit(1);
-			}
-			printf("Offre envoyée\n");
-
-		} else {
-			
-			continuer = 1;
+		if ((envoye = sendto(sock, &offre, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, lgadresseReceveur)) != sizeof(int)) {
+			perror("sendto");
+			close(sock);
 			exit(1);
 		}
+		printf("Offre envoyée\n");
 
 		//reception offre courante
-		if ((recu = recvfrom(sock, &prix, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) != sizeof(int)) {
+		if ((recu = recvfrom(sock, &prix, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1) {
 			perror("recvfrom offreCourante"); 
 			close(sock);
 			exit(1);
@@ -121,21 +113,27 @@ int main(int argc, char *argv[]) {
 		printf("Offre courante = %d euros\n", prix);
 
 		//reception datagramme vide
-		strcpy(buf, "");
-		if ((recu = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) != sizeof(buf)) {
+		int rien;
+		if ((recu = recvfrom(sock, &rien, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1) {
 			perror("recvfrom buf"); 
 			close(sock);
 			exit(1);
 		}
-		if (buf == "") {
 
-			printf("Adjuge vendu!\n");
+		if (recu == 0) {
+
+			printf("Adjugé vendu!\n");
+
+			if(offre == prix) {
+				printf("Vous avez gagné la vente!\n");
+			}
 			continuer = 1;
 
 		} else {
 
-			printf("Suite de la vente...\n");
+			printf("...\n");
 		}
+		
 	}
 
 	close(sock);

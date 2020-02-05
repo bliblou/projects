@@ -29,6 +29,7 @@ typedef struct {
   double * v2;
   double * v3;
   double result;
+  long nbCoeur;
 } Product;
 
 /*********** Data structure ***********/
@@ -84,7 +85,7 @@ void * mult(void * data) {
   index = (size_t)data;
 
   cpu_set_t s;
-  int coeur = index%12;
+  int coeur = index%prod.nbCoeur;
   CPU_SET(coeur, &s);
 
   if (sched_setaffinity(0, sizeof(cpu_set_t), &s) != 0) {
@@ -191,8 +192,8 @@ int main(int argc,char ** argv) {
   pthread_t  addTh;
   void      *threadReturnValue;
 
-  long nbCoeur = sysconf(_SC_NPROCESSORS_ONLN);
-  printf("Nombre de coeurs = %ld\n", nbCoeur);
+  prod.nbCoeur = sysconf(_SC_NPROCESSORS_ONLN);
+  printf("Nombre de coeurs = %ld\n", prod.nbCoeur);
 
   /* Lire le nombre d'iterations et la taille des vecteurs */
   if((argc<=2)||
