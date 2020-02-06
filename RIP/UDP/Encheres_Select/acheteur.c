@@ -20,6 +20,9 @@ int main(int argc, char *argv[]) {
 
 	int prix;
 	int offre;
+	char offre1;
+
+	fd_set lect;
 
 	/* cr'eation de la socket */
 	if ((sock = socket( AF_INET, SOCK_DGRAM , 0 )) == -1) {
@@ -56,7 +59,7 @@ int main(int argc, char *argv[]) {
 	printf("Demande de participation en cours...\n");
 
 	//attente confirmation
-	int conf = -1;
+	int conf;
 	if ((recu = recvfrom(sock, &conf, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1) {
 		perror("recvfrom confirmation"); 
 		close(sock);
@@ -64,9 +67,6 @@ int main(int argc, char *argv[]) {
 	}
 	if (conf == 1) {
 		printf("Participation confirmee\n");
-	} else {
-		printf("Participation refusee\n");
-		exit (1);
 	}
 	
 	adresseReceveur.sin_port = htons(atoi(argv[2]));
@@ -89,53 +89,62 @@ int main(int argc, char *argv[]) {
 	printf("Prix: %d\n", prix);
 
 	int continuer = 0;
-	int lect;
 
 	while (continuer == 0) {
 
 		FD_ZERO(&lect);
-		FD_SET();
+		FD_SET(sock, &lect);
+		FD_SET(0, &lect);
 
 		printf("Saisissez offre:\n");
-		scanf("%d", &offre);
 
-		if ((envoye = sendto(sock, &offre, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, lgadresseReceveur)) != sizeof(int)) {
-			perror("sendto");
-			close(sock);
-			exit(1);
-		}
-		printf("Offre envoyée\n");
+		if(FD_ISSET(0, &lect)) {
 
-		//reception offre courante
-		if ((recu = recvfrom(sock, &prix, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1) {
-			perror("recvfrom offreCourante"); 
-			close(sock);
-			exit(1);
-		}
-		printf("Offre courante = %d euros\n", prix);
-
-		//reception datagramme vide
-		int rien;
-		if ((recu = recvfrom(sock, &rien, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1) {
-			perror("recvfrom buf"); 
-			close(sock);
-			exit(1);
-		}
-
-		if (recu == 0) {
-
-			printf("Adjugé vendu!\n");
-
-			if(offre == prix) {
-				printf("Vous avez gagné la vente!\n");
+			if(read(0, buf, 256) == 0) {
+				perror("read");
+				exit (1);
 			}
-			continuer = 1;
 
-		} else {
+			offre = atoi(buf);
 
-			printf("...\n");
+
+			if ((envoye = sendto(sock, &offre, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, lgadresseReceveur)) != sizeof(int)) {
+				perror("sendto");
+				close(sock);
+				exit(1);
+			}
+			printf("Offre envoyée\n");
 		}
-		
+
+		if(FD_ISSET(sock, &lect)) { 
+
+			//reception offre courante
+			if ((recu = recvfrom(sock, &prix, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1) {
+				perror("recvfrom offreCourante"); 
+				close(sock);
+				exit(1);
+			}
+			printf("Offre courante = %d euros\n", prix);
+
+			//reception datagramme vide
+			int rien;
+			if ((recu = recvfrom(sock, &rien, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1) {
+				perror("recvfrom buf"); 
+				close(sock);
+				exit(1);
+			}
+
+			if (recu == 0) {
+
+				printf("Adjugé vendu!\n");
+
+				if(offre == prix) {
+					printf("Vous avez gagné la vente!\n");
+				}
+				continuer = 1;
+
+			}
+		}
 	}
 
 	close(sock);
