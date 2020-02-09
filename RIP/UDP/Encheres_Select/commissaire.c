@@ -12,6 +12,15 @@
 
 #define MAXCLIENTS 10
 
+int max(int a, int b) {
+
+	if(a>b) {
+		return a;
+	} else {
+		return b;
+	}
+}
+
 int main (int argc, char **argv) {
 
 	int sockAccueil,sockVente,recu,envoye;
@@ -72,17 +81,18 @@ int main (int argc, char **argv) {
 	  	exit(1);
 	}
 
-	printf("Démarrer la vente?[y]\n");
-
-	//BOUCLE D'ACCUEIL------------------------------------------------------------------------------------------------------------------------------------
-	int continuer = 0;
-	while(continuer == 0) {
+	int continuer =0;
+	int smax = max(sockAccueil, sockVente);
+	
+	// BOUCLE DE VENTE --------------------------------------------------------------------------------------------------------------------------------
+	while (continuer == 0) {
 
 		FD_ZERO(&lect);
+		FD_SET(sockVente, &lect);
 		FD_SET(sockAccueil, &lect);
 		FD_SET(0, &lect);
 
-		select(sockAccueil+1, &lect, NULL, NULL, NULL);
+		select(smax+1, &lect, NULL, NULL, NULL);
 
 		if (FD_ISSET(sockAccueil, &lect)) {
 
@@ -95,80 +105,27 @@ int main (int argc, char **argv) {
 			}
 		
 			adresse[nb] = adresseEmetteur;
-			nb++;
 			printf("Connection de: %s\n", buf);
-		}
 
-		if (FD_ISSET(0, &lect)) { //surveillance
-
-			if(read(0, &reponse, 1) == 0) {
-				perror("read");
-				exit (1);
+			strcpy(buf, "Description objet blah blah");
+			lgadresseEmetteur = sizeof(adresse[nb]);
+			if ((envoye = sendto(sockVente, buf, sizeof(buf), 0, (struct sockaddr *) &adresse[nb], lgadresseEmetteur)) != sizeof(buf)) {
+				perror("sendto");
+				close(sockVente);
+				close(sockAccueil);
+				exit(1);
 			}
 
-			if(reponse == 'y') {
-
-				continuer = 1;
-				conf = 1;
-
-				for (int i=0;i<nb;i++) {
-				
-					lgadresseEmetteur = sizeof(adresse[i]);
-					if ((envoye = sendto(sockAccueil, &conf, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
-						perror("sendto");
-						close(sockVente);
-						close(sockAccueil);
-						exit(1);
-					}
-				}
-
-				printf("Démarrage de la vente.\n");
-
+			lgadresseEmetteur = sizeof(adresse[nb]);
+			if ((envoye = sendto(sockVente, &prix, sizeof(int), 0, (struct sockaddr *) &adresse[nb], lgadresseEmetteur)) != sizeof(int)) {
+				perror("sendto");
+				close(sockVente);
+				close(sockAccueil);
+				exit(1);
 			}
+
+			nb++;
 		}
-	}
-	
-	close(sockAccueil);
-
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	// BOUCLE D'AVANT VENTE -------------------------------------------------------------------------------------------------------------------------
-
-	for (int i = 0; i < nb; i++) {
-		
-		strcpy(buf, "");
-		strcpy(buf, "Description objet blah blah");
-		lgadresseEmetteur = sizeof(adresse[i]);
-		if ((envoye = sendto(sockVente, buf, sizeof(buf), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(buf)) {
-			perror("sendto");
-			close(sockVente);
-			exit(1);
-		}
-
-		printf("Description envoyee\n");
-
-		lgadresseEmetteur = sizeof(adresse[i]);
-		if ((envoye = sendto(sockVente, &prix, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
-			perror("sendto");
-			close(sockVente);
-			exit(1);
-		}
-
-		printf("Prix envoye\n");
-	}
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	// BOUCLE DE VENTE --------------------------------------------------------------------------------------------------------------------------------
-	continuer = 0;
-	while (continuer == 0) {
-
-		FD_ZERO(&lect);
-		FD_SET(sockVente, &lect);
-		FD_SET(0, &lect);
-
-		select(sockVente+1, &lect, NULL, NULL, NULL);
-
-		printf("Attente offre...\n");
 
 		if (FD_ISSET(sockVente, &lect)) {
 
@@ -176,6 +133,7 @@ int main (int argc, char **argv) {
 			if ((recu = recvfrom(sockVente, &offre, sizeof(int), 0, (struct sockaddr *) &adresseEmetteur, &lgadresseEmetteur)) == -1) {
 				perror("recvfrom");
 				close(sockVente);
+				close(sockAccueil);
 				exit(1);
 			}
 
@@ -190,6 +148,7 @@ int main (int argc, char **argv) {
 					if ((envoye = sendto(sockVente, &offreCourante, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
 						perror("sendto");
 						close(sockVente);
+						close(sockAccueil);
 						exit(1);
 					}
 
@@ -197,6 +156,7 @@ int main (int argc, char **argv) {
 					if ((envoye = sendto(sockVente, &rien, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
 						perror("sendto");
 						close(sockVente);
+						close(sockAccueil);
 						exit(1);
 					}
 					
@@ -223,6 +183,7 @@ int main (int argc, char **argv) {
 					if ((envoye = sendto(sockVente, &offreCourante, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
 						perror("sendto");
 						close(sockVente);
+						close(sockAccueil);
 						exit(1);
 					}
 
@@ -230,12 +191,11 @@ int main (int argc, char **argv) {
 					if ((envoye = sendto(sockVente, &rien, 0, 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != 0) {
 						perror("sendto");
 						close(sockVente);
+						close(sockAccueil);
 						exit(1);
 					}
 					
 				}
-
-				printf("buffer vide et offre courante envoyes\n");
 
 				continuer = 1;
 
@@ -245,6 +205,7 @@ int main (int argc, char **argv) {
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	close(sockVente);
+	close(sockAccueil);
 
 	return 1;
 

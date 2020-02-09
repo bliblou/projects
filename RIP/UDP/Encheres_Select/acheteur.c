@@ -58,21 +58,11 @@ int main(int argc, char *argv[]) {
 	}
 	printf("Demande de participation en cours...\n");
 
-	//attente confirmation
-	int conf;
-	if ((recu = recvfrom(sock, &conf, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1) {
-		perror("recvfrom confirmation"); 
-		close(sock);
-		exit(1);
-	}
-	if (conf == 1) {
-		printf("Participation confirmee\n");
-	}
+	sleep(1);
 	
 	adresseReceveur.sin_port = htons(atoi(argv[2]));
 
 	//attente description
-	strcpy(buf, "");
 	if ((recu = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1) {
 		perror("recvfrom buf"); 
 		close(sock);
@@ -98,6 +88,8 @@ int main(int argc, char *argv[]) {
 
 		printf("Saisissez offre:\n");
 
+		select(sock+1, &lect, NULL, NULL, NULL);
+
 		if(FD_ISSET(0, &lect)) {
 
 			if(read(0, buf, 256) == 0) {
@@ -106,7 +98,6 @@ int main(int argc, char *argv[]) {
 			}
 
 			offre = atoi(buf);
-
 
 			if ((envoye = sendto(sock, &offre, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, lgadresseReceveur)) != sizeof(int)) {
 				perror("sendto");
