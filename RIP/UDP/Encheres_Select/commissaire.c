@@ -82,124 +82,155 @@ int main (int argc, char **argv) {
 	}
 
 	int continuer =0;
-	int smax = max(sockAccueil, sockVente);
+	int smax = max(sockAccueil, sockVente); //  smax c'est pour mettre dans le select afin de surveiller les deux sockets en meme temps... demande pas pk non plus mdrrrr
 	
-	// BOUCLE DE VENTE --------------------------------------------------------------------------------------------------------------------------------
+	struct timeval tv;
+	tv.tv_sec = 30;
+    tv.tv_usec = 0;
+
+	// BOUCLE -----------------------------------------------------------------------------------------------------------------------------------------------------------
 	while (continuer == 0) {
 
-		FD_ZERO(&lect);
-		FD_SET(sockVente, &lect);
+		FD_ZERO(&lect); //on met le lecteur à zero
+		FD_SET(sockVente, &lect); //le lecteur doit surveiller les sockets
 		FD_SET(sockAccueil, &lect);
-		FD_SET(0, &lect);
+		FD_SET(0, &lect); // le lecteur surveille l'entrée clavier (c'est 0 me demande pas pk)
 
-		select(smax+1, &lect, NULL, NULL, NULL);
+		if(select(smax+1, &lect, NULL, NULL, &tv)) { //on attend qu'il se passe un truc sur les sockets....
 
-		if (FD_ISSET(sockAccueil, &lect)) {
+			if (FD_ISSET(sockAccueil, &lect)) { ///SI IL SE PASSE UN TRUC SUR L'ACCUEIL BOUME on fait les trucs
 
-			lgadresseEmetteur = sizeof(adresseEmetteur);
-			if ((recu = recvfrom(sockAccueil, buf, sizeof(buf), 0, (struct sockaddr *) &adresseEmetteur, &lgadresseEmetteur)) == -1) {
-				perror("recvfrom buf");
-				close(sockVente);
-				close(sockAccueil);
-				exit(1);
-			}
-		
-			adresse[nb] = adresseEmetteur;
-			printf("Connection de: %s\n", buf);
-
-			strcpy(buf, "Description objet blah blah");
-			lgadresseEmetteur = sizeof(adresse[nb]);
-			if ((envoye = sendto(sockVente, buf, sizeof(buf), 0, (struct sockaddr *) &adresse[nb], lgadresseEmetteur)) != sizeof(buf)) {
-				perror("sendto");
-				close(sockVente);
-				close(sockAccueil);
-				exit(1);
-			}
-
-			lgadresseEmetteur = sizeof(adresse[nb]);
-			if ((envoye = sendto(sockVente, &prix, sizeof(int), 0, (struct sockaddr *) &adresse[nb], lgadresseEmetteur)) != sizeof(int)) {
-				perror("sendto");
-				close(sockVente);
-				close(sockAccueil);
-				exit(1);
-			}
-
-			nb++;
-		}
-
-		if (FD_ISSET(sockVente, &lect)) {
-
-			lgadresseEmetteur = sizeof(adresseEmetteur);
-			if ((recu = recvfrom(sockVente, &offre, sizeof(int), 0, (struct sockaddr *) &adresseEmetteur, &lgadresseEmetteur)) == -1) {
-				perror("recvfrom");
-				close(sockVente);
-				close(sockAccueil);
-				exit(1);
-			}
-
-			printf("Offre reçue: %d\n", offre);
-
-			if (offre > offreCourante) {
-				offreCourante = offre;
-
-				for (int i = 0; i < nb; ++i) {
-
-					lgadresseEmetteur = sizeof(adresseEmetteur);
-					if ((envoye = sendto(sockVente, &offreCourante, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
-						perror("sendto");
-						close(sockVente);
-						close(sockAccueil);
-						exit(1);
-					}
-
-					lgadresseEmetteur = sizeof(adresseEmetteur);
-					if ((envoye = sendto(sockVente, &rien, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
-						perror("sendto");
-						close(sockVente);
-						close(sockAccueil);
-						exit(1);
-					}
-					
+				lgadresseEmetteur = sizeof(adresseEmetteur);
+				if ((recu = recvfrom(sockAccueil, buf, sizeof(buf), 0, (struct sockaddr *) &adresseEmetteur, &lgadresseEmetteur)) == -1) {
+					perror("recvfrom buf");
+					close(sockVente);
+					close(sockAccueil);
+					exit(1);
 				}
-			}
-		}
+			
+				adresse[nb] = adresseEmetteur;
+				printf("Connection de: %s\n", buf);
 
-		printf("Meilleure offre = %d euros. [n] pour terminer la vente.\n", offreCourante);
-
-		if (FD_ISSET(0, &lect)) {
-
-			if(read(0, &reponse, 1) == 0) {
-				perror("read");
-				exit (1);
-			}
-
-			if(reponse == 'n') {
-
-				printf("Fin de la vente...\n");
-
-				for (int i = 0; i < nb; ++i) {
-
-					lgadresseEmetteur = sizeof(adresseEmetteur);
-					if ((envoye = sendto(sockVente, &offreCourante, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
-						perror("sendto");
-						close(sockVente);
-						close(sockAccueil);
-						exit(1);
-					}
-
-					lgadresseEmetteur = sizeof(adresseEmetteur);
-					if ((envoye = sendto(sockVente, &rien, 0, 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != 0) {
-						perror("sendto");
-						close(sockVente);
-						close(sockAccueil);
-						exit(1);
-					}
-					
+				strcpy(buf, "Description objet blah blah");
+				lgadresseEmetteur = sizeof(adresse[nb]);
+				if ((envoye = sendto(sockVente, buf, sizeof(buf), 0, (struct sockaddr *) &adresse[nb], lgadresseEmetteur)) != sizeof(buf)) {
+					perror("sendto");
+					close(sockVente);
+					close(sockAccueil);
+					exit(1);
 				}
 
-				continuer = 1;
+				lgadresseEmetteur = sizeof(adresse[nb]);
+				if ((envoye = sendto(sockVente, &prix, sizeof(int), 0, (struct sockaddr *) &adresse[nb], lgadresseEmetteur)) != sizeof(int)) {
+					perror("sendto");
+					close(sockVente);
+					close(sockAccueil);
+					exit(1);
+				}
 
+				nb++;
 			}
+
+			if (FD_ISSET(sockVente, &lect)) { // S'IL SE PASSE UN TRUC SUR LA VENTE BOUME ON PEUT LE FAIRE EN MEME TEMPS!!!
+
+				lgadresseEmetteur = sizeof(adresseEmetteur);
+				if ((recu = recvfrom(sockVente, &offre, sizeof(int), 0, (struct sockaddr *) &adresseEmetteur, &lgadresseEmetteur)) == -1) {
+					perror("recvfrom");
+					close(sockVente);
+					close(sockAccueil);
+					exit(1);
+				}
+
+				printf("Offre reçue: %d\n", offre);
+
+				if (offre > offreCourante) {
+					offreCourante = offre;
+
+					for (int i = 0; i < nb; i++) {
+
+						lgadresseEmetteur = sizeof(adresseEmetteur);
+						if ((envoye = sendto(sockVente, &offreCourante, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
+							perror("sendto");
+							close(sockVente);
+							close(sockAccueil);
+							exit(1);
+						}
+
+						lgadresseEmetteur = sizeof(adresseEmetteur);
+						if ((envoye = sendto(sockVente, &rien, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
+							perror("sendto");
+							close(sockVente);
+							close(sockAccueil);
+							exit(1);
+						}
+						
+					}
+				}
+			}
+
+			printf("Meilleure offre = %d euros. [n] pour terminer la vente.\n", offreCourante);
+
+			if (FD_ISSET(0, &lect)) { // et là on checke s'il se passe un truc sur le clavier
+
+				if(read(0, &reponse, 1) == 0) {
+					perror("read");
+					exit (1);
+				}
+
+				if(reponse == 'n') {
+
+					printf("Fin de la vente...\n");
+
+					for (int i = 0; i < nb; i++) {
+
+						lgadresseEmetteur = sizeof(adresseEmetteur);
+						if ((envoye = sendto(sockVente, &offreCourante, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
+							perror("sendto");
+							close(sockVente);
+							close(sockAccueil);
+							exit(1);
+						}
+
+						lgadresseEmetteur = sizeof(adresseEmetteur);
+						if ((envoye = sendto(sockVente, &rien, 0, 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != 0) {
+							perror("sendto");
+							close(sockVente);
+							close(sockAccueil);
+							exit(1);
+						}
+						
+					}
+
+					continuer = 1; // on arrête de tout vérifier
+
+				}
+			}
+
+		} else {
+
+			printf("Fin de la vente...\n");
+
+			for (int i = 0; i < nb; i++) {
+
+				lgadresseEmetteur = sizeof(adresseEmetteur);
+				if ((envoye = sendto(sockVente, &offreCourante, sizeof(int), 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != sizeof(int)) {
+					perror("sendto");
+					close(sockVente);
+					close(sockAccueil);
+					exit(1);
+				}
+
+				lgadresseEmetteur = sizeof(adresseEmetteur);
+				if ((envoye = sendto(sockVente, &rien, 0, 0, (struct sockaddr *) &adresse[i], lgadresseEmetteur)) != 0) {
+					perror("sendto");
+					close(sockVente);
+					close(sockAccueil);
+					exit(1);
+				}
+				
+			}
+
+			continuer = 1; // on arrête de tout vérifier
 		}
 	}
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

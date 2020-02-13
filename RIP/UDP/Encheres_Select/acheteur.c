@@ -76,21 +76,21 @@ int main(int argc, char *argv[]) {
 		close(sock);
 		exit(1);
 	}
-	printf("Prix: %d\n", prix);
+	printf("Prix de base: %d\n", prix);
 
 	int continuer = 0;
 
 	while (continuer == 0) {
 
 		FD_ZERO(&lect);
-		FD_SET(sock, &lect);
-		FD_SET(0, &lect);
+		FD_SET(sock, &lect); //on surveille la socket
+		FD_SET(0, &lect); //on surveille l'entrée clavier!
 
 		printf("Saisissez offre:\n");
 
-		select(sock+1, &lect, NULL, NULL, NULL);
+		select(sock+1, &lect, NULL, NULL, NULL); //on attend une action
 
-		if(FD_ISSET(0, &lect)) {
+		if(FD_ISSET(0, &lect)) { //si c'est clavier....
 
 			if(read(0, buf, 256) == 0) {
 				perror("read");
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
 			printf("Offre envoyée\n");
 		}
 
-		if(FD_ISSET(sock, &lect)) { 
+		if(FD_ISSET(sock, &lect)) { ///ou si on reçoit un truc...
 
 			//reception offre courante
 			if ((recu = recvfrom(sock, &prix, sizeof(int), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1) {
