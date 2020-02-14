@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <string.h>
+#include <assert.h>
 
 /*********** Data Type ***********/
 
@@ -197,11 +199,9 @@ int main(int argc,char ** argv) {
 
   char *ptr;
   int fd;
-
   int tailleFichier;
   struct stat st;
-
-  char chaine[12];
+  char * c;
 
   prod.nbCoeur = sysconf(_SC_NPROCESSORS_ONLN);
   printf("Nombre de coeurs = %ld\n", prod.nbCoeur);
@@ -219,13 +219,15 @@ int main(int argc,char ** argv) {
     exit (1);
   }
 
+  printf("mmap en cours...\n");
   ptr = mmap(NULL, tailleFichier, PROT_READ, MAP_PRIVATE, fd, 0);
 
-  prod.nbIterations == (size_t) atoi(ptr);
-  printf("%ld\n", prod.nbIterations);
-
-  prod.size == (size_t) atoi(ptr + 2);
-  printf("%ld\n", prod.size);
+  prod.nbIterations = strtol(ptr, &c, 10);
+  assert(ptr != c);
+  ptr = c;
+  prod.size = strtol(ptr, &c, 10);
+  assert(ptr != c);
+  ptr = c;
 
   /* Initialisations (Product, tableaux, generateur aleatoire,etc) */
   prod.state=STATE_WAIT;
@@ -262,8 +264,6 @@ int main(int argc,char ** argv) {
     exit (1);
   }
 
-  srand(time((time_t *)0));   /* Init du generateur de nombres aleatoires */
-
   /* Pour chacune des iterations a realiser, c'est a dire :                   */
   for(iter=0;iter<prod.nbIterations;iter++) { /* tant que toutes les iterations */
                                               /* n'ont pas eu lieu              */
@@ -272,13 +272,19 @@ int main(int argc,char ** argv) {
     ///init vecteurs
     for(int j=0;j<prod.size;j++) {
 
-      prod.v1[j]=atoi(ptr+j);
-      prod.v2[j]=atoi(ptr+j + (prod.size*2));
+      prod.v1[j]=strtol(ptr, &c, 10);
+      assert(ptr != c);
+      ptr = c;
 
-      /*prod.v1[j]=10.0*(0.5-((double)rand())/((double)RAND_MAX));
-      prod.v2[j]=10.0*(0.5-((double)rand())/((double)RAND_MAX));*/
     }
 
+    for(int j=0;j<prod.size;j++) {
+
+      prod.v2[j]=strtol(ptr, &c, 10);
+      assert(ptr != c);
+      ptr = c;
+
+    }
 
     /*=>Autoriser le demarrage des multiplications pour une nouvelle iteration..*/
     pthread_mutex_lock(&(prod.mutex));

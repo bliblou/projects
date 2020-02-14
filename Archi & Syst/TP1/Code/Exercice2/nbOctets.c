@@ -40,10 +40,6 @@ int main(int argc,char **argv) {
 
   fileName=argv[1];
 
-  /* A cause de warnings lorsque le code n'est pas encore la ...*/
-
-  (void)action; (void)fIn; (void)tube; (void)status; (void)pidREAD; (void)pidWC;
-
   /* Gestion des signaux */
   /* =================== */
 
