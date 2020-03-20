@@ -1,0 +1,16 @@
+v 4
+file . "banc.vhd" "ed59bb7046153dd7afaf86935eb1ae042842ed7e" "20200303153035.443":
+  entity banc_registre at 1( 0) + 0 on 40;
+  architecture archi of banc_registre at 15( 399) + 0 on 41;
+file . "flipflop.vhd" "1922e8221c3188933dc3136ebb6879f38473db46" "20200219163247.637":
+  entity flipflop at 1( 0) + 0 on 28;
+  architecture a1 of flipflop at 6( 75) + 0 on 29;
+file . "mux.vhd" "92e46ff340ed4a1aad18069d257bbcbff45eb20d" "20200303145735.444":
+  entity mux at 1( 0) + 0 on 36;
+  architecture arch of mux at 6( 65) + 0 on 37;
+file . "simmux.vhd" "6b95cad7204a37699b1476380cba55dfb18ece83" "20200303145743.700":
+  entity testmux at 1( 0) + 0 on 38;
+  architecture sim of testmux at 4( 33) + 0 on 39;
+file . "simflipflop.vhd" "72e0b9c9b64ee35962991565b0eaaa6e3e4b2dde" "20200219163312.690":
+  entity testflipflop at 1( 0) + 0 on 30;
+  architecture sim of testflipflop at 4( 43) + 0 on 31;

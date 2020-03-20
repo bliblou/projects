@@ -1,0 +1,62 @@
+$date
+  Tue Mar  3 16:01:31 2020
+$end
+$version
+  GHDL v0
+$end
+$timescale
+  1 fs
+$end
+$scope module standard $end
+$upscope $end
+$scope module testmux $end
+$var reg 1 ! ea $end
+$var reg 1 " eb $end
+$var reg 1 # ec $end
+$var reg 1 $ q $end
+$scope module m $end
+$var reg 1 % a $end
+$var reg 1 & b $end
+$var reg 1 ' c $end
+$var reg 1 ( s $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+0!
+0"
+0#
+0$
+0%
+0&
+0'
+0(
+#50000000000000
+1!
+1$
+1%
+1(
+#70000000000000
+1"
+1&
+#100000000000000
+0"
+0&
+#120000000000000
+1#
+0$
+1'
+0(
+#150000000000000
+0!
+0%
+#170000000000000
+1"
+1$
+1&
+1(
+#190000000000000
+0"
+0$
+0&
+0(
